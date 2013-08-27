@@ -4,6 +4,7 @@ import org.specs2.mutable.Specification
 import org.fusesource.scalate.{TemplateSource, TemplateEngine}
 import java.io.File
 import org.fusesource.scalate.util.FileResourceLoader
+import org.fusesource.scalate.scaml.ScamlCodeGenerator
 
 class GeneratorSpec extends Specification {
 

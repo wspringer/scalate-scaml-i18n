@@ -10,19 +10,33 @@ class I18nScamlCodeGenerator extends ScamlCodeGenerator {
     override def generateTextExpression(statement: TextExpression, is_line: Boolean) {
       statement match {
         case s: LiteralText => {
-          println("Literal!!!")
           if (is_line) {
             write_indent
           }
           var literal = true;
+          def gettext(part: String) = "gettext(\"" + part + "\")"
           for (part <- s.text) {
             // alternate between rendering literal and interpolated text
+            flush_text
             if (literal) {
-              writeSanitized(part, None, literal)
+              if (!part.isEmpty) {
+                val (leading, meat, trailing) = isolate(part)
+                def insertIfNotEmpty(str: String) =
+                  if (!str.isEmpty) this << "$_scalate_$_context <<< (\"" + str + "\")"
+                insertIfNotEmpty(leading)
+                this << "$_scalate_$_context <<< ( " :: gettext(meat) :: " );" :: Nil
+                insertIfNotEmpty(trailing)
+              }
               literal = false
             } else {
-              flush_text
-              writeSanitized(part, s.sanitize, literal)
+              s.sanitize match {
+                case None =>
+                  this << "$_scalate_$_context <<< ( " :: part :: " );" :: Nil
+                case Some(true) =>
+                  this << "$_scalate_$_context.escape( " :: part :: " );" :: Nil
+                case Some(false) =>
+                  this << "$_scalate_$_context.unescape( " :: part :: " );" :: Nil
+              }
               literal = true
             }
           }
@@ -30,34 +44,10 @@ class I18nScamlCodeGenerator extends ScamlCodeGenerator {
             write_nl
           }
         }
-        case _ =>
-          super.generateTextExpression(statement, is_line)
+        case _ => super.generateTextExpression(statement, is_line)
       }
     }
-
-    private def writeSanitized(part: Text, sanitize: Option[Boolean], literal: Boolean) {
-      println(isolate(part.toString))
-      val (leading, meat, trailing) = isolate(part.toString)
-      this << "$_scalate_$_context <<< (\"" + leading + "\");" :: Nil
-      println("LEADING: \"" + leading + "\"")
-      println("MEAT: " + meat)
-      println("TRAILING: " + leading)
-      val trimmed = new Text(meat).setPos(part.pos)
-      (sanitize, literal) match {
-        case (None, false) =>
-          this << "$_scalate_$_context <<< ( gettext(" + trimmed + ") );" :: Nil
-        case (Some(true), false) =>
-          this << "$_scalate_$_context.escape( gettext(" + trimmed + ") );" :: Nil
-        case (Some(false), false) =>
-          this << "$_scalate_$_context.unescape( gettext(" + trimmed + ") );" :: Nil
-        case (_, true) =>
-          this << "$_scalate_$_context <<< ( gettext(\"" + trimmed + "\") );" :: Nil
-      }
-      this << "$_scalate_$_context <<< (\"" + trailing + "\");" :: Nil
-    }
-
   }
-
 
   override def generate(engine: TemplateEngine, source: TemplateSource, bindings: Traversable[Binding]) = {
     val uri = source.uri
