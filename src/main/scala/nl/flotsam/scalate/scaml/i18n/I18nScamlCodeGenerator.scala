@@ -1,53 +1,29 @@
 package nl.flotsam.scalate.scaml.i18n
 
-import org.fusesource.scalate.scaml.{LiteralText, TextExpression, ScamlParser, ScamlCodeGenerator}
+import org.fusesource.scalate.scaml._
 import org.fusesource.scalate.{Binding, TemplateSource, TemplateEngine}
 import org.fusesource.scalate.support.{Text, Code}
-import java.util.Properties
+import java.util.{Locale, ResourceBundle, Properties}
+import org.fusesource.scalate.support.Code
+import scala.util.DynamicVariable
 
-class I18nScamlCodeGenerator(producer: Producer = Producer.noBundle) extends ScamlCodeGenerator {
+class I18nScamlCodeGenerator(bundle: ResourceBundle) extends ScamlCodeGenerator {
 
-  protected class I18nSourceBuilder(producer: Producer) extends SourceBuilder {
+  private val msgId = "msgid"
+  private val localeBindingName = "locale"
 
-    def gettext(part: String) = producer.produce(part)
+  protected class I18nSourceBuilder() extends SourceBuilder {
 
-    override def generateTextExpression(statement: TextExpression, is_line: Boolean) {
-      statement match {
-        case s: LiteralText => {
-          if (is_line) {
-            write_indent
-          }
-          var literal = true;
-          for (part <- s.text) {
-            // alternate between rendering literal and interpolated text
-            flush_text
-            if (literal) {
-              if (!part.isEmpty) {
-                val (leading, meat, trailing) = isolate(part)
-                def insertIfNotEmpty(str: String) =
-                  if (!str.isEmpty) this << "$_scalate_$_context <<< (\"" + str + "\")"
-                insertIfNotEmpty(leading)
-                this << "$_scalate_$_context <<< ( " :: gettext(meat) :: " );" :: Nil
-                insertIfNotEmpty(trailing)
-              }
-              literal = false
-            } else {
-              s.sanitize match {
-                case None =>
-                  this << "$_scalate_$_context <<< ( " :: part :: " );" :: Nil
-                case Some(true) =>
-                  this << "$_scalate_$_context.escape( " :: part :: " );" :: Nil
-                case Some(false) =>
-                  this << "$_scalate_$_context.unescape( " :: part :: " );" :: Nil
-              }
-              literal = true
-            }
-          }
-          if (is_line) {
-            write_nl
-          }
-        }
-        case _ => super.generateTextExpression(statement, is_line)
+    private val locale = new DynamicVariable(Locale.ENGLISH)
+
+    override def generate(statement: Element): Unit = {
+      statement.attributes.collectFirst {
+        case (Text(`msgId`), LiteralText(text, _)) => text.mkString
+      } flatMap { id => Option(bundle.getString(id)) } match {
+        case Some(msg) =>
+          super.generate(statement.copy(text = Some(LiteralText(text = List(Text(msg)), sanitize = Some(true)))))
+        case None =>
+          super.generate(statement)
       }
     }
   }
@@ -56,7 +32,7 @@ class I18nScamlCodeGenerator(producer: Producer = Producer.noBundle) extends Sca
     val uri = source.uri
     val hamlSource = source.text
     val statements = (new ScamlParser).parse(hamlSource)
-    val builder = new I18nSourceBuilder(producer)
+    val builder = new I18nSourceBuilder()
     builder.generate(engine, source, bindings, statements)
     Code(source.className, builder.code, Set(uri), builder.positions)
   }
