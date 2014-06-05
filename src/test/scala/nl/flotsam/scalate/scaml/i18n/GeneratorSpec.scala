@@ -12,7 +12,8 @@ class GeneratorSpec extends Specification {
   "The SCAML generator" should {
 
     "allow you to generate valid Scalate code" in {
-      val generator = new I18nScamlCodeGenerator(Producer.bundle)
+      val props = new Properties
+      val generator = new I18nScamlCodeGenerator(Handler.using("test").collecting(props))
       val workingDir = new File(System.getProperty("user.dir"))
       val testResourceDir = new File(workingDir, "src/test/resources")
       val engine = new TemplateEngine(List(testResourceDir))
@@ -23,6 +24,7 @@ class GeneratorSpec extends Specification {
       engine.codeGenerators += "scaml" -> generator
       println(engine.layout(source))
       println(engine.layout(source, Map("locale" -> Locale.GERMAN)))
+      println(props.toString)
       ok
     }
 
