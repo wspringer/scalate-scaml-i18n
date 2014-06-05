@@ -3,10 +3,14 @@ package nl.flotsam.scalate.scaml.i18n
 import org.fusesource.scalate.scaml.{LiteralText, TextExpression, ScamlParser, ScamlCodeGenerator}
 import org.fusesource.scalate.{Binding, TemplateSource, TemplateEngine}
 import org.fusesource.scalate.support.{Text, Code}
+import java.util.Properties
 
-class I18nScamlCodeGenerator extends ScamlCodeGenerator {
+class I18nScamlCodeGenerator(producer: Producer = Producer.noBundle) extends ScamlCodeGenerator {
 
-  protected class I18nSourceBuilder extends SourceBuilder {
+  protected class I18nSourceBuilder(producer: Producer) extends SourceBuilder {
+
+    def gettext(part: String) = producer.produce(part)
+
     override def generateTextExpression(statement: TextExpression, is_line: Boolean) {
       statement match {
         case s: LiteralText => {
@@ -14,7 +18,6 @@ class I18nScamlCodeGenerator extends ScamlCodeGenerator {
             write_indent
           }
           var literal = true;
-          def gettext(part: String) = "gettext(\"" + part + "\")"
           for (part <- s.text) {
             // alternate between rendering literal and interpolated text
             flush_text
@@ -53,8 +56,7 @@ class I18nScamlCodeGenerator extends ScamlCodeGenerator {
     val uri = source.uri
     val hamlSource = source.text
     val statements = (new ScamlParser).parse(hamlSource)
-
-    val builder = new I18nSourceBuilder()
+    val builder = new I18nSourceBuilder(producer)
     builder.generate(engine, source, bindings, statements)
     Code(source.className, builder.code, Set(uri), builder.positions)
   }
