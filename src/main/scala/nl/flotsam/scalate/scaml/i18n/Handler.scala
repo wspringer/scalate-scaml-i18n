@@ -19,6 +19,8 @@ trait Handler {
    */
   def handle(text: String, msgId: Option[String]): String
 
+  def localName: Option[String]
+
   /**
    * Different handlers might have different needs of objects to be bound by default. This allows the Handler to
    * specify what it needs.
@@ -37,6 +39,9 @@ trait Handler {
     }
 
     override def bindings(): List[Binding] = Handler.this.bindings()
+
+    override def localName: Option[String] = Handler.this.localName
+
   }
 
 }
@@ -60,6 +65,8 @@ object Handler {
       case None => "\"" + StringEscapeUtils.escapeJava(text) + "\""
     }
 
+    override def localName: Option[String] = Some(localeName)
+
     def bindings(): List[Binding] = List(
       new Binding(
         name = localeName,
@@ -80,6 +87,7 @@ object Handler {
   def withoutLookup = new Handler {
     def handle(text: String, msgId: Option[String]) = "\"" + StringEscapeUtils.escapeJava(text) + "\""
     override def bindings(): List[Binding] = List.empty
+    override def localName: Option[String] = None
   }
 
 }

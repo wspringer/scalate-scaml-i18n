@@ -62,7 +62,8 @@ import scala.util.DynamicVariable
  */
 class I18nScamlCodeGenerator(handler: Handler = Handler.using("app"),
                              l10AttrName: String = "l10n",
-                             dropl10n: Boolean = true)
+                             dropl10n: Boolean = true,
+                             includeLang: Boolean = true)
   extends ScamlCodeGenerator
 {
 
@@ -91,8 +92,23 @@ class I18nScamlCodeGenerator(handler: Handler = Handler.using("app"),
           statement match {
             case Element(_, _, text, Nil, _, _) =>
               msgId.withValue(Some(id)) {
+                val l10nfiltered =
+                  if (dropl10n) statement.attributes.filterNot(_._1 == attrNameAsText)
+                  else statement.attributes
+                val langIncluded =
+                  handler.localName match {
+                    case Some(localName) if includeLang =>
+                      (Text("lang"), EvaluatedText(
+                        code = Text(localName),
+                        body = List.empty,
+                        preserve = false,
+                        sanitize = Some(true),
+                        ugly = false
+                      )) :: l10nfiltered
+                    case _ => l10nfiltered
+                  }
                 if (dropl10n) {
-                  super.generate(statement.copy(attributes = statement.attributes.filterNot(_._1 == attrNameAsText)))
+                  super.generate(statement.copy(attributes = langIncluded))
                 } else {
                   super.generate(statement)
                 }
