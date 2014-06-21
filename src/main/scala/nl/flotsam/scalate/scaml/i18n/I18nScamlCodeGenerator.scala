@@ -19,14 +19,14 @@ import scala.util.DynamicVariable
  * As an example, suppose this is what you had before:
  *
  * {{{
- *   <div>wonderful</div>
+ * <div>wonderful</div>
  * }}}
  *
  * Now, let's add that l10n attribute. (Note: you can leave out the text if you want the text to come from a resource
  * bundle, but there are reasons to leave it in. More on that later.)
  *
  * {{{
- *   <div l10n="wonderful">wonderful</div>
+ * <div l10n="wonderful">wonderful</div>
  * }}}
  *
  * With this in place, add two files to the classpath. One named app.properties, containing:
@@ -44,13 +44,13 @@ import scala.util.DynamicVariable
  * If you now invoke the layout function of the TemplateEngine without any additional properties, you will get:
  *
  * {{{
- *   <div>wonderful</div>
+ * <div>wonderful</div>
  * }}}
  *
  * However, if you pass a locale property, and set it to Locale.GERMAN, you will get:
  *
  * {{{
- *   <div>wunderbar</div>
+ * <div>wunderbar</div>
  * }}}
  *
  * Note that by default, the l10n attribute will be dropped. If you don't want that, then you can keep it included by
@@ -64,8 +64,7 @@ class I18nScamlCodeGenerator(handler: Handler = Handler.using("app"),
                              l10AttrName: String = "l10n",
                              dropl10n: Boolean = true,
                              includeLang: Boolean = true)
-  extends ScamlCodeGenerator
-{
+  extends ScamlCodeGenerator {
 
   protected class I18nSourceBuilder() extends SourceBuilder {
 
@@ -81,7 +80,6 @@ class I18nScamlCodeGenerator(handler: Handler = Handler.using("app"),
 
     override def generateBindings(bindings: Traversable[Binding])(body: => Unit): Unit =
       super.generateBindings(bindings.toList ::: handler.bindings())(body)
-
 
 
     override def generate(statement: Element): Unit = {
@@ -107,11 +105,7 @@ class I18nScamlCodeGenerator(handler: Handler = Handler.using("app"),
                       )) :: l10nfiltered
                     case _ => l10nfiltered
                   }
-                if (dropl10n) {
-                  super.generate(statement.copy(attributes = langIncluded))
-                } else {
-                  super.generate(statement)
-                }
+                super.generate(statement.copy(attributes = langIncluded))
               }
             case _ =>
               super.generate(statement)
