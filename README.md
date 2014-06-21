@@ -57,6 +57,16 @@ Making sure it uses  a different locale is still done in the same way:
     
 Mind you, the generator is just changing the way the normal SCAML to Scala generator normally works. It's not a preprocessor changing one version of SCAML into another version and only then generate the Scala code.
 
+In order to have a first version your properties file (one with your default locale), you can slightly modify the Handler that got passed a few lines ago:
+
+    val properties = new Properties
+    val generator = new I18nScamlCodeGenerator(
+      handler = Handler.using("app").collection(properties)
+      dropl10n = true
+    )
+
+If you compile your templates with this TemplateEngine, the properties object will have the properties for which you need translations.
+
 ## Limitations
 
 This is just a proof of concept. There are many more things that could be done to make this more useful:
