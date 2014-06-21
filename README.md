@@ -85,5 +85,7 @@ should be changed into:
 
 … and more things like that.
 
+## Example project?
 
+Sure, just check out [this project here](https://github.com/wspringer/unfiltered-scalate-i18n-test), based on Unfiltered.
 
