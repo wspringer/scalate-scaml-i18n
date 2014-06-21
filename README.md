@@ -78,7 +78,7 @@ Perhaps expressions like these:
     -val appreciation = "super nice"
     %p(l10n="wonderful") This is just #{appreciation}!!!!
 
-Into:
+should be changed into:
 
     -val appreciation = "super nice"
     %p(l10n="wonderful")= new MessageFormat(bundle.getString("wonderful")).format(appreciation)
